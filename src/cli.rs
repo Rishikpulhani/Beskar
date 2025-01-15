@@ -1,10 +1,15 @@
 use colored::*;
 use std::process::Command;
+use std::path::Path;
+use std::path::PathBuf;
 
-pub fn generate_output(mutant_dir:&String){
+pub fn generate_output(mutant_dir: &String,path: &PathBuf) {
     let mutant_vec = mutant_dir.split("/").collect::<Vec<&str>>();
+    let new_file = PathBuf::from(path);
+    let file_name = new_file.file_name().unwrap().to_str().unwrap();
+    let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0];
     let mutant_num = mutant_vec[mutant_vec.len() - 1];
-    let out_file_path = format!("./beskar_out/outfile{}.txt", mutant_num);
+    let out_file_path = format!("./beskar_out_{}/outfile{}.txt", file_name_without_extension,mutant_num);
 
     let output = Command::new("grep")
         .args(["PASS", out_file_path.as_str()])
@@ -13,12 +18,14 @@ pub fn generate_output(mutant_dir:&String){
 
     let final_op = String::from_utf8_lossy(&output.stdout);
     let final_op_vec = final_op.split("[PASS]").collect::<Vec<&str>>();
-    if final_op == ""{
+    if final_op == "" {
+        println!("ran tests for {}",file_name);
         println!("{} {}", "[PASS] mutant number".green(), mutant_num.green());
     } else {
-        println!("{} {}","[FAIL] mutant number".red(), mutant_num.red());
+        println!("ran tests for {}",file_name);
+        println!("{} {}", "[FAIL] mutant number".red(), mutant_num.red());
         println!("{}", "Passing tests:".red());
-        for i in 0..final_op_vec.len(){
+        for i in 0..final_op_vec.len() {
             let passed_test = final_op_vec[i];
             println!("{}", passed_test.red());
         }
