@@ -3,9 +3,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::thread;
 
-use ctrlc_async;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+
 
 use Beskar::{generate_output, mutate, run_tests};
 
@@ -29,6 +27,15 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args[1].as_str() {
         "run" => {
+            let rm_dir_paths = fs::read_dir("./").unwrap();
+            for p in rm_dir_paths.filter(|p|{
+                //let file_name = p.as_ref().unwrap().path().file_name().unwrap().split(".").collect::<Vec<&str>>()[0];
+                let new_name = p.as_ref().unwrap().path();
+                let new_file_name = new_name.file_name().unwrap().to_str().unwrap();
+                String::from(new_file_name).starts_with("gambit_out") || new_file_name.starts_with("beskar_out")
+            }){
+                fs::remove_dir_all(p.unwrap().path()).unwrap();
+            }
             let paths = fs::read_dir("./src").unwrap();
             let mut handles = Vec::new();
 
@@ -55,26 +62,10 @@ fn main() {
                     }
 
                     let _ = fs::copy(Path::new(&tmp_file_name), Path::new(&file_path));
-                    fs::remove_file(tmp_file_name);
+                    fs::remove_file(tmp_file_name).unwrap();
                 }));
                 
-                /*let tmp_file_name = format!("./src/{}", "tmp.sol");
-                // chnage required
-                let path = path_.unwrap().path();
-                let new_file = PathBuf::from(path.clone());
-                let file_name = new_file.file_name().unwrap().to_str().unwrap();//this gives the filename of the file currently being mutatated
-                let file_path = format!("./src/{}", file_name);
-
-                mutate(&path, &tmp_file_name);
-                let mutants = fs::read_dir("./gambit_out/mutants").unwrap();
-                for mutant in mutants {
-                    let mutant_check = mutant.as_ref().unwrap().path();
-                    let mutant_dir = mutant.as_ref().unwrap().file_name().into_string().unwrap();
-                    run_tests(&mutant_dir, &mutant_check, &path);
-                    generate_output(&mutant_dir)
-                }
-
-                let _ = fs::copy(Path::new(&tmp_file_name),Path::new(&file_path));*/
+                
             }
             for handle in handles {
                 handle.join().unwrap();
