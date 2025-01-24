@@ -15,5 +15,5 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 colored = "2.1.0"
-ctrlc-async = "3.2.2"
+ctrlc = "3.4.5"
 spinners = "4.1.1"
