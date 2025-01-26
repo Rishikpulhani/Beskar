@@ -39,29 +39,30 @@ pub fn clear() {
 pub fn run_remap_tool(ctrlc_caller: Arc<AtomicBool>){
     let remap_file_content_string =fs::read_to_string("./remappings.txt").expect("cannot read remappings.txt file");
     let remapped_dir_iter = remap_file_content_string.lines();
-    let mut remapped_directories: Vec<String> = Vec::new();
-    for path in remapped_dir_iter{
+    //let mut remapped_directories: Vec<String> = Vec::new();
+    /*for path in remapped_dir_iter{
         remapped_directories.push(String::from(path));
-    }
-    // pathbuf are like String, they are owned values 
-    for dir_path in remapped_directories{
-        //run_tool(&dir_path, ctrlc_caller.clone());
+    }*/
+    for dir_path in remapped_dir_iter{
+        run_tool(&dir_path, ctrlc_caller.clone());
     }
 }
-pub fn run_tool(dir_path: &'static str, ctrlc_caller: Arc<AtomicBool>) {
+pub fn run_tool(dir_path: &str, ctrlc_caller: Arc<AtomicBool>) {
     let paths = fs::read_dir(dir_path).unwrap();
     let mut handles = Vec::new();
+    let dir_path_owned : Arc<String> = Arc::new(String::from(dir_path));
     
 
     for path_ in paths {
         let r1 = ctrlc_caller.clone();
+        let dir_path_th = dir_path_owned.clone();
         handles.push(thread::spawn(move || {
             let path = path_.unwrap().path();
             let new_file = PathBuf::from(path.clone());
             let file_name = new_file.file_name().unwrap().to_str().unwrap(); //this gives the filename of the file currently being mutatated
             let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0];
-            let file_path = format!("{dir_path}/{}", file_name);
-            let tmp_file_name = format!("{dir_path}/{}tmp.sol", file_name);
+            let file_path = format!("{dir_path_th}/{}", file_name);
+            let tmp_file_name = format!("{dir_path_th}/{}tmp.sol", file_name);
 
             //mutant generation
             mutate(&path, &tmp_file_name);
