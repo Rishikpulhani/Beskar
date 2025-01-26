@@ -1,12 +1,9 @@
-use ctrlc::set_handler;
+use std::env::Args;
 use std::fs::{self};
-use std::path::Path;
-use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::thread;
 
-use Beskar::{clear, generate_output, print_result, run_tool};
+use Beskar::{clear, print_result, run_tool, Cli_args, run_remap_tool};
 
 /// 1. terminal report overview
 /*
@@ -24,9 +21,44 @@ use Beskar::{clear, generate_output, print_result, run_tool};
 
 fn main() {
     /* assuming run from foundry project root */
-
-    let args: Vec<String> = std::env::args().collect();
-    match args[1].as_str() {
+    // the dot in the cli command foor running means any arguments that are there further are ar okay 
+    let mut args:Args  = std::env::args().into_iter();// iterator
+    args.next();
+    //let command = &args.next().unwrap();
+    //let remap;
+    //let remap_file_iter_res;
+    //let mut dir_path_remap_vec = Vec::new();
+    // since this is an onwed value if we directly pass it to the lines method which takes a reference to this then once it has operated i upon the return value references this string but since it is an owned type and after the lines method there is no let on it i.e no variable owns this value so it will be dropped, so we use the let to own this string and later reference it 
+    /*let remap_file_path = match args.next(){
+        Some(val)=> if val.ends_with(".txt") {
+            remap = true;
+            remap_file_iter_res = fs::read_to_string(&val).unwrap();
+            dir_path_remap_vec = remap_file_iter_res.lines().collect();
+            val
+        }
+        else {
+            remap = false;
+            "none".to_string()
+        },
+        None => {
+            remap=false;
+            "none".to_string()
+        },
+    };
+    println!("{remap}");*/
+    //let input_args = Cli_args::new(command,remap,&remap_file_path);
+    let input_args = Cli_args{
+        command : &args.next().unwrap(),
+        remap : match args.next(){
+            Some(val) => if val=="remappings" {
+                true
+            }
+            else {false},
+            None => false,
+        },
+    };
+    
+    match input_args.command {
         "run" => {
             // removal of earlier files due to previuos iteration if the tool
             clear();
@@ -41,6 +73,19 @@ fn main() {
 
             // mutant generation and testing of tests
             run_tool("./src", running.clone());
+
+            // remapping run 
+            if input_args.remap{
+                //let remap_file_path = String::from(input_args.remap_file_path);
+                /*let dir_paths_res = fs::read_to_string("./remappings.txt").unwrap();
+                let mut other_dir_paths = Vec::new();
+                for path in dir_paths_res.lines(){
+                    other_dir_paths.push(String::from(path));
+                }
+                run_remap_tool(other_dir_paths, running.clone());*/
+                run_remap_tool(running.clone());
+                
+            }
 
             //output generation
             if running.load(Ordering::SeqCst) {

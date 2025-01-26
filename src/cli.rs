@@ -34,3 +34,18 @@ pub fn generate_output(mutant_dir: &String, path: &PathBuf) {
         }
     }
 }
+
+pub struct Cli_args<'a>{
+    pub command : &'a str,
+    pub remap : bool,
+    //pub remap_file_path : &'a str,
+}
+ /*impl<'a> Cli_args<'a>{
+    pub fn new(command : &'a str, remap:bool) -> Cli_args<'a>{
+        Cli_args{
+            command,
+            remap,
+            //remap_file_path,
+        }
+    }
+ }*/

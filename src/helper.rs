@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
+use std::vec;
 
 use crate::cli::*;
 use crate::mutations::*;
@@ -26,9 +27,31 @@ pub fn clear() {
     }
 }
 
+/*pub fn run_tool_if_remap(remap_file_path_res : String,ctrlc_caller: Arc<AtomicBool>){
+    //let remapping_file_path = format!("./{}",remap_file_path);
+                //let remappings_iter_res = fs::read_to_string(remapping_file_path).unwrap();
+                let remapping_iter = remap_file_path_res.lines();// names of the directories which store the contracts to be mutated 
+                for contract_dir_path in remapping_iter{
+                    run_tool(&contract_dir_path, ctrlc_caller.clone());
+                }
+}*/
+
+pub fn run_remap_tool(ctrlc_caller: Arc<AtomicBool>){
+    let remap_file_content_string =fs::read_to_string("./remappings.txt").expect("cannot read remappings.txt file");
+    let remapped_dir_iter = remap_file_content_string.lines();
+    let mut remapped_directories: Vec<String> = Vec::new();
+    for path in remapped_dir_iter{
+        remapped_directories.push(String::from(path));
+    }
+    // pathbuf are like String, they are owned values 
+    for dir_path in remapped_directories{
+        //run_tool(&dir_path, ctrlc_caller.clone());
+    }
+}
 pub fn run_tool(dir_path: &'static str, ctrlc_caller: Arc<AtomicBool>) {
     let paths = fs::read_dir(dir_path).unwrap();
     let mut handles = Vec::new();
+    
 
     for path_ in paths {
         let r1 = ctrlc_caller.clone();
