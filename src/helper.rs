@@ -30,28 +30,82 @@ pub fn clear() {
 /*pub fn run_tool_if_remap(remap_file_path_res : String,ctrlc_caller: Arc<AtomicBool>){
     //let remapping_file_path = format!("./{}",remap_file_path);
                 //let remappings_iter_res = fs::read_to_string(remapping_file_path).unwrap();
-                let remapping_iter = remap_file_path_res.lines();// names of the directories which store the contracts to be mutated 
+                let remapping_iter = remap_file_path_res.lines();// names of the directories which store the contracts to be mutated
                 for contract_dir_path in remapping_iter{
                     run_tool(&contract_dir_path, ctrlc_caller.clone());
                 }
 }*/
 
-pub fn run_remap_tool(ctrlc_caller: Arc<AtomicBool>){
-    let remap_file_content_string =fs::read_to_string("./remappings.txt").expect("cannot read remappings.txt file");
+pub fn run_remap_tool(ctrlc_caller: Arc<AtomicBool>) {
+    println!("running remap");
+    let remap_file_content_string =
+        fs::read_to_string("./remappings.txt").expect("cannot read remappings.txt file");
     let remapped_dir_iter = remap_file_content_string.lines();
     //let mut remapped_directories: Vec<String> = Vec::new();
     /*for path in remapped_dir_iter{
         remapped_directories.push(String::from(path));
     }*/
-    for dir_path in remapped_dir_iter{
+
+    // for simple remappings
+    /*for dir_path in remapped_dir_iter{
         run_tool(&dir_path, ctrlc_caller.clone());
+    }*/
+
+    // for complex remappings following a general pattern in file paths
+    for dir_path in remapped_dir_iter {
+        let paths = fs::read_dir(dir_path).unwrap();
+        let mut handles = Vec::new();
+        let dir_path_owned: Arc<String> = Arc::new(String::from(dir_path));
+        for path_ in paths {
+            // path_ is contracts/governance/gov.sol in result
+            let r1 = ctrlc_caller.clone();
+            let dir_path_th = dir_path_owned.clone();
+            ////contracts/goveernance
+            handles.push(thread::spawn(move || {
+                let path = path_.unwrap().path();
+                //path is contracts/governance/gov.sol
+                //Returns the full path to the file that this entry represents.
+                let new_file = PathBuf::from(path.clone());
+                // new file i s contracts/governance/gov.sol
+                let file_name = new_file.file_name().unwrap().to_str().unwrap();
+                //Returns the final component of the Path so gov.sol
+                let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0]; // removed .sol
+                                                                                                  //gov
+                let file_path = format!("{dir_path_th}/{}", file_name); //contracts/governance/gov.sol
+                let tmp_file_name = format!("{dir_path_th}/{}tmp.sol", file_name); //contracts/governance/gov.soltmp.sol
+
+                //mutant generation
+                mutate(&path, &tmp_file_name, dir_path_th.clone());
+                let mutants = fs::read_dir(format!(
+                    "./gambit_out_{}/mutants",
+                    file_name_without_extension
+                ))
+                .unwrap();
+                for mutant in mutants {
+                    if r1.load(Ordering::SeqCst) {
+                        let mutant_check = mutant.as_ref().unwrap().path();
+                        let mutant_dir =
+                            mutant.as_ref().unwrap().file_name().into_string().unwrap();
+                        run_tests(&mutant_dir, &mutant_check, &path, dir_path_th.clone());
+                    //generate_output(&mutant_dir, &path)
+                    } else {
+                        break;
+                    }
+                }
+                let _ = fs::copy(Path::new(&tmp_file_name), Path::new(&file_path));
+                fs::remove_file(tmp_file_name).unwrap();
+            }));
+        }
+        for handle in handles {
+            handle.join().unwrap();
+        }
     }
 }
+
 pub fn run_tool(dir_path: &str, ctrlc_caller: Arc<AtomicBool>) {
     let paths = fs::read_dir(dir_path).unwrap();
     let mut handles = Vec::new();
-    let dir_path_owned : Arc<String> = Arc::new(String::from(dir_path));
-    
+    let dir_path_owned: Arc<String> = Arc::new(String::from(dir_path));
 
     for path_ in paths {
         let r1 = ctrlc_caller.clone();
@@ -65,7 +119,7 @@ pub fn run_tool(dir_path: &str, ctrlc_caller: Arc<AtomicBool>) {
             let tmp_file_name = format!("{dir_path_th}/{}tmp.sol", file_name);
 
             //mutant generation
-            mutate(&path, &tmp_file_name);
+            mutate(&path, &tmp_file_name, dir_path_th.clone());
             let mutants = fs::read_dir(format!(
                 "./gambit_out_{}/mutants",
                 file_name_without_extension
@@ -79,7 +133,7 @@ pub fn run_tool(dir_path: &str, ctrlc_caller: Arc<AtomicBool>) {
                 if r1.load(Ordering::SeqCst) {
                     let mutant_check = mutant.as_ref().unwrap().path();
                     let mutant_dir = mutant.as_ref().unwrap().file_name().into_string().unwrap();
-                    run_tests(&mutant_dir, &mutant_check, &path);
+                    run_tests(&mutant_dir, &mutant_check, &path, dir_path_th.clone());
                 //generate_output(&mutant_dir, &path)
                 } else {
                     break;
@@ -115,7 +169,5 @@ pub fn print_result(dir_path: &'static str) {
         }
     }
 }
-
-
 
 // change the beskar out folder division to fill folder wise datat from remappings

@@ -3,12 +3,16 @@ use std::fs::{self, File};
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::Arc;
 
-pub fn mutate(path: &PathBuf, tmp_file_name: &String) {
-    let new_file = PathBuf::from(path);
-    let file_name = new_file.file_name().unwrap().to_str().unwrap();
-    let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0];
-    let file_path = format!("./src/{}", file_name);
+pub fn mutate(path: &PathBuf, tmp_file_name: &String, dir_path_th: Arc<String>) {
+    //path is contracts/governance/gov.sol
+    //contracts/governance/gov.soltmp.sol
+    // dir_path_th is contracts/goveernance
+    let new_file = PathBuf::from(path); //contracts/governance/gov.sol
+    let file_name = new_file.file_name().unwrap().to_str().unwrap(); //gov.sol
+    let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0]; //gov
+    let file_path = format!("{}/{}", dir_path_th, file_name); //./contracts/goveernance/gov.sol
 
     if file_name.ends_with(".sol") {
         let output = Command::new("gambit")

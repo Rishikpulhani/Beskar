@@ -1,4 +1,5 @@
 use spinners::{Spinner, Spinners};
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -7,13 +8,21 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-pub fn run_tests(mutant_dir: &String, mutant_check: &PathBuf, path: &PathBuf) {
+pub fn run_tests(
+    mutant_dir: &String,
+    mutant_check: &PathBuf,
+    path: &PathBuf,
+    dir_path_th: Arc<String>,
+) {
+    ////path is contracts/governance/gov.sol
     let new_file = PathBuf::from(path);
-    let file_name = new_file.file_name().unwrap().to_str().unwrap();
-    let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0];
-    let test_file_name = format!("{}.t.sol", file_name_without_extension);
-    let file_path = format!("./src/{}", file_name);
-    //println!("{:?}", mutant_dir);
+    let file_name = new_file.file_name().unwrap().to_str().unwrap(); //gov.sol
+    let file_name_without_extension = file_name.split(".").collect::<Vec<&str>>()[0]; //gov
+    let test_file_name = format!("{}.t.sol", file_name_without_extension); //gov.t.sol
+
+    let file_path = format!("{}/{}", dir_path_th, file_name); //./contracts/goveernance/gov.sol
+                                                              //let file_path = format!("./src/{}", file_name);
+                                                              //println!("{:?}", mutant_dir);
     let mutant_vec = mutant_dir.split("/").collect::<Vec<&str>>();
     //println!("{:?}", mutant_vec);
     let mutant_num = mutant_vec[mutant_vec.len() - 1];
