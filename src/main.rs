@@ -60,7 +60,7 @@ fn main() {
             None => false,
         },
     };
-    println!("{}",input_args.remap);
+    //println!("{}", input_args.remap);
     match input_args.command {
         "run" => {
             // removal of earlier files due to previuos iteration if the tool
@@ -75,11 +75,10 @@ fn main() {
             .expect("Error setting Ctrl-C handler");
 
             // mutant generation and testing of tests
-            
 
             // remapping run
-            if input_args.remap {
-                println!("run");
+            if (input_args.remap && fs::exists("./remappings.txt").unwrap()) {
+                //println!("run");
                 //let remap_file_path = String::from(input_args.remap_file_path);
                 /*let dir_paths_res = fs::read_to_string("./remappings.txt").unwrap();
                 let mut other_dir_paths = Vec::new();
@@ -87,10 +86,12 @@ fn main() {
                     other_dir_paths.push(String::from(path));
                 }
                 run_remap_tool(other_dir_paths, running.clone());*/
+
+                run_remap_tool();
                 run_tool("./src", running.clone());
-                run_remap_tool(running.clone());
-            }
-            else {
+
+            } else {
+                //println!("else run");
                 run_tool("./src", running.clone());
             }
 

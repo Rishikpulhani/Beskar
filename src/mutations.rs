@@ -6,6 +6,7 @@ use std::process::Command;
 use std::sync::Arc;
 
 pub fn mutate(path: &PathBuf, tmp_file_name: &String, dir_path_th: Arc<String>) {
+    println!("ran mutation function for {}",tmp_file_name);
     //path is contracts/governance/gov.sol
     //contracts/governance/gov.soltmp.sol
     // dir_path_th is contracts/goveernance
@@ -15,6 +16,7 @@ pub fn mutate(path: &PathBuf, tmp_file_name: &String, dir_path_th: Arc<String>) 
     let file_path = format!("{}/{}", dir_path_th, file_name); //./contracts/goveernance/gov.sol
 
     if file_name.ends_with(".sol") {
+        println!("in mutation the file name ends with .sol");
         let output = Command::new("gambit")
             .args(["mutate", "--filename", file_path.as_str()])
             .output()
